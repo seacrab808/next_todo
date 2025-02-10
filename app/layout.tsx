@@ -1,3 +1,6 @@
+import Navigation from "./components/navigation";
+import ClientLayout from "./client-layout";
+
 export const metadata = {
   title: "todo",
   description: "next.js todo app",
@@ -10,7 +13,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ClientLayout>
+          <Navigation />
+          {children}
+        </ClientLayout>
+      </body>
     </html>
   );
 }
