@@ -3,11 +3,12 @@
 import styled from "styled-components";
 import Link from "next/link";
 import Image from "next/image";
+import { useMediaQuery } from "react-responsive";
 
 const Nav = styled.nav`
   width: 100%;
   height: 60px;
-  background-color: ${({ theme }) => theme.colors.slate[100]};
+  background-color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -27,17 +28,13 @@ const LogoLink = styled(Link)`
 `;
 
 export default function Navigation() {
+  const isMobile = useMediaQuery({ query: "(max-width: 480px)" });
+ 
   return (
     <Nav>
       <NavContent>
         <LogoLink href="/">
-          <Image
-            src="/images/logo_full.png"
-            alt="로고"
-            layout="intrinsic"
-            width={151}
-            height={40}
-          />
+          <Image src={isMobile ? "/images/logo_small.png" : "/images/logo_full.png"} alt="로고" width={isMobile ? 71 : 151} height={40} />
         </LogoLink>
       </NavContent>
     </Nav>

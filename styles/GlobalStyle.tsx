@@ -33,7 +33,7 @@ const GlobalStyle = createGlobalStyle`
   body {
     line-height: 1;
     font-family: "NanumSquare", sans-serif;
-    background-color: ${({ theme }) => theme.colors.slate[100]};
+    background-color: ${({ theme }) => theme.colors.gray[50]};
     color: ${({ theme }) => theme.colors.slate[900]};
   }
 
