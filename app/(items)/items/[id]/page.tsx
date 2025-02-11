@@ -1,7 +1,7 @@
-export default function itemPage({
+export default function ItemPage({
   params: { id },
 }: {
   params: { id: string };
 }) {
-  return <h1>item page: {id}</h1>;
+  return <h1>item page: {decodeURIComponent(id)}</h1>;
 }

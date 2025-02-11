@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import styled from "styled-components";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const Container = styled.div`
   width: 100%;
@@ -125,6 +126,7 @@ export default function HomeTodo() {
   const [todoList, setTodoList] = useState([]);
   const [doneList, setDoneList] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const handleResize = () => {
@@ -164,6 +166,10 @@ export default function HomeTodo() {
     setTodoList([...todoList, item]);
   };
 
+  const handleNavigate = (item) => {
+    router.push(`/items/${encodeURIComponent(item)}`);
+  }
+
   return (
     <Container>
       <InputContainer>
@@ -189,8 +195,8 @@ export default function HomeTodo() {
             </EmptyPlace>
           ) : (
             todoList.map((item, index) => (
-              <TodoItem key={index}>
-                <CheckBox src="/images/check_before.png" alt="check" width={32} height={32} onClick={() => handleToggleTodo(index)} />
+              <TodoItem key={index} onClick={() => handleNavigate(item)}>
+                <CheckBox src="/images/check_before.png" alt="check" width={32} height={32} onClick={(e) => {e.stopPropagation(); handleToggleTodo(index);}} />
                 {item}
               </TodoItem>
             ))
@@ -208,8 +214,8 @@ export default function HomeTodo() {
             </EmptyPlace>
           ) : (
             doneList.map((item, index) => (
-              <TodoItem key={index} className="done">
-                <CheckBox src="/images/check_purple.png" alt="check" width={32} height={32} onClick={() => handleToggleDone(index)} />
+              <TodoItem key={index} className="done" onClick={() => handleNavigate(item)}>
+                <CheckBox src="/images/check_purple.png" alt="check" width={32} height={32} onClick={(e) => {e.stopPropagation(); handleToggleTodo(index);}} />
                 {item}
               </TodoItem>
             ))
