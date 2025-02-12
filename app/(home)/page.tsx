@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import styled from "styled-components";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { fetchTodos, addTodo, updateTodo } from "../../utils/api";
 
 const Container = styled.div`
   width: 100%;
@@ -53,9 +54,9 @@ const InputContainer = styled.div`
       background-color: ${({ theme }) => theme.colors.slate[300]};
       transition: 0.5s;
     }
-    
+
     @media (max-width: 480px) {
-      padding: 14px 20px; 
+      padding: 14px 20px;
     }
   }
 `;
@@ -128,95 +129,164 @@ export default function HomeTodo() {
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
 
+  // 할 일 목록 불러오기
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 480);
-    };
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
+    async function loadTodos() {
+      try {
+        const todos = await fetchTodos();
+        setTodoList(todos.filter((todo) => !todo.isCompleted)); // 미완료 리스트
+        setDoneList(todos.filter((todo) => todo.isCompleted)); // 완료된 리스트
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    loadTodos();
   }, []);
 
-  const handleAddTodo = () => {
+  // 할 일 추가하기
+  const handleAddTodo = async () => {
     if (todo.trim()) {
-      setTodoList([...todoList, todo]);
-      setTodo("");
+      try {
+        const newTodo = await addTodo(todo);
+        setTodoList([...todoList, newTodo]);
+        setTodo("");
+      } catch (error) {
+        console.error(error);
+      }
     }
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleAddTodo();
+  // 할 일 완료/미완료 상태 변경
+  const handleToggleTodo = async (item) => {
+    try {
+      console.log("📤 할 일 상태 변경 요청:", {
+        id: item.id,
+        name: item.name,
+        isCompleted: !item.isCompleted,
+        // memo: item.memo,
+        // imageUrl: item.imageUrl,
+      });
+
+      const updatedTodo = await updateTodo(
+        item.id,
+        item.name,
+        !item.isCompleted
+      );
+
+      console.log("✅ 응답 성공:", updatedTodo);
+
+      // 상태 업데이트
+      if (item.isCompleted) {
+        setDoneList(doneList.filter((todo) => todo.id !== item.id));
+        setTodoList([...todoList, updatedTodo]);
+      } else {
+        setTodoList(todoList.filter((todo) => todo.id !== item.id));
+        setDoneList([...doneList, updatedTodo]);
+      }
+    } catch (error) {
+      console.error("❌ 할 일 상태 변경 중 오류 발생:", error);
     }
   };
 
-  const handleToggleTodo = (index) => {
-    const item = todoList[index];
-    setTodoList(todoList.filter((_, i) => i !== index));
-    setDoneList([...doneList, item]);
+  // 상세 페이지로 이동
+  const handleNavigate = (itemId) => {
+    router.push(`/items/${itemId}`);
   };
-
-  const handleToggleDone = (index) => {
-    const item = doneList[index];
-    setDoneList(doneList.filter((_, i) => i !== index));
-    setTodoList([...todoList, item]);
-  };
-
-  const handleNavigate = (item) => {
-    router.push(`/items/${encodeURIComponent(item)}`);
-  }
 
   return (
     <Container>
       <InputContainer>
-        <input 
-          type="text" 
-          placeholder="할 일을 입력해주세요" 
-          value={todo} 
+        <input
+          type="text"
+          placeholder="할 일을 입력해주세요"
+          value={todo}
           onChange={(e) => setTodo(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleAddTodo();
+            }
+          }}
         />
         <button onClick={handleAddTodo}>{isMobile ? "+" : "+ 추가하기"}</button>
       </InputContainer>
 
       <TodoSection>
+        {/* TODO */}
         <Column>
           <TodoHeader>
             <Image src="/images/todo.png" alt="TODO" width={101} height={36} />
           </TodoHeader>
           {todoList.length === 0 ? (
             <EmptyPlace>
-              <Image src="/images/todo_empty.png" alt="No tasks" width={240} height={240} />
-              <EmptyLine>할 일이 없어요.<br />TODO를 새롭게 추가해주세요!</EmptyLine>
+              <Image
+                src="/images/todo_empty.png"
+                alt="No tasks"
+                width={240}
+                height={240}
+              />
+              <EmptyLine>
+                할 일이 없어요.
+                <br />
+                TODO를 새롭게 추가해주세요!
+              </EmptyLine>
             </EmptyPlace>
           ) : (
             todoList.map((item, index) => (
-              <TodoItem key={index} onClick={() => handleNavigate(item)}>
-                <CheckBox src="/images/check_before.png" alt="check" width={32} height={32} onClick={(e) => {e.stopPropagation(); handleToggleTodo(index);}} />
-                {item}
+              <TodoItem key={index} onClick={() => handleNavigate(item.id)}>
+                <CheckBox
+                  src="/images/check_before.png"
+                  alt="check"
+                  width={32}
+                  height={32}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleTodo(item);
+                  }}
+                />
+                {item.name}
               </TodoItem>
             ))
           )}
         </Column>
 
+        {/* DONE */}
         <Column>
           <TodoHeader>
             <Image src="/images/done.png" alt="DONE" width={97} height={36} />
           </TodoHeader>
           {doneList.length === 0 ? (
             <EmptyPlace>
-              <Image src="/images/done_empty.png" alt="No tasks" width={240} height={240} />
-              <EmptyLine>아직 다 한 일이 없어요.<br />해야 할 일을 체크해보세요!</EmptyLine>
+              <Image
+                src="/images/done_empty.png"
+                alt="No tasks"
+                width={240}
+                height={240}
+              />
+              <EmptyLine>
+                아직 다 한 일이 없어요.
+                <br />
+                해야 할 일을 체크해보세요!
+              </EmptyLine>
             </EmptyPlace>
           ) : (
             doneList.map((item, index) => (
-              <TodoItem key={index} className="done" onClick={() => handleNavigate(item)}>
-                <CheckBox src="/images/check_purple.png" alt="check" width={32} height={32} onClick={(e) => {e.stopPropagation(); handleToggleTodo(index);}} />
-                {item}
+              <TodoItem
+                key={index}
+                className="done"
+                onClick={() => handleNavigate(item.id)}
+              >
+                <CheckBox
+                  src="/images/check_purple.png"
+                  alt="check"
+                  width={32}
+                  height={32}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleTodo(item);
+                  }}
+                />
+                {item.name}
               </TodoItem>
             ))
           )}
